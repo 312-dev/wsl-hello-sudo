@@ -25,17 +25,22 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Enable auto-merge for non-major updates
-        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+      # Patch updates only. Dependabot reports 0.10 -> 0.11 as "semver-minor",
+      # but for a 0.x crate that is a breaking change, and most of this tree is
+      # 0.x. Auto-merging minor bumps here merged three breaking updates on the
+      # first day. Patch-only is the defensible policy for an auth module.
+      - name: Enable auto-merge for patch updates
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
         run: gh pr merge --auto --squash "$PR_URL"
 
-      - name: Flag major updates for review
-        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+      - name: Flag everything else for review
+        if: steps.meta.outputs.update-type != 'version-update:semver-patch'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_URL: ${{ github.event.pull_request.html_url }}
+          KIND: ${{ steps.meta.outputs.update-type }}
         run: |
-          gh pr comment "$PR_URL" --body "Major version bump, so auto-merge is deliberately withheld. This module runs inside sudo; review the changelog for behavioural changes before merging."
+          gh pr comment "$PR_URL" --body "\`$KIND\`, so auto-merge is deliberately withheld. This module runs inside sudo, and for 0.x crates a minor bump is a breaking change. Review the changelog before merging."
