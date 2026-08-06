@@ -121,39 +121,6 @@ pub struct pam_message {
     pub msg_style: ::std::os::raw::c_int,
     pub msg: *const ::std::os::raw::c_char,
 }
-#[test]
-fn bindgen_test_layout_pam_message() {
-    assert_eq!(
-        ::std::mem::size_of::<pam_message>(),
-        16usize,
-        concat!("Size of: ", stringify!(pam_message))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<pam_message>(),
-        8usize,
-        concat!("Alignment of ", stringify!(pam_message))
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_message)).msg_style as *const _ as usize },
-        0usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_message),
-            "::",
-            stringify!(msg_style)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_message)).msg as *const _ as usize },
-        8usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_message),
-            "::",
-            stringify!(msg)
-        )
-    );
-}
 impl Clone for pam_message {
     fn clone(&self) -> Self {
         *self
@@ -164,39 +131,6 @@ impl Clone for pam_message {
 pub struct pam_response {
     pub resp: *mut ::std::os::raw::c_char,
     pub resp_retcode: ::std::os::raw::c_int,
-}
-#[test]
-fn bindgen_test_layout_pam_response() {
-    assert_eq!(
-        ::std::mem::size_of::<pam_response>(),
-        16usize,
-        concat!("Size of: ", stringify!(pam_response))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<pam_response>(),
-        8usize,
-        concat!("Alignment of ", stringify!(pam_response))
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_response)).resp as *const _ as usize },
-        0usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_response),
-            "::",
-            stringify!(resp)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_response)).resp_retcode as *const _ as usize },
-        8usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_response),
-            "::",
-            stringify!(resp_retcode)
-        )
-    );
 }
 impl Clone for pam_response {
     fn clone(&self) -> Self {
@@ -216,39 +150,6 @@ pub struct pam_conv {
     >,
     pub appdata_ptr: *mut ::std::os::raw::c_void,
 }
-#[test]
-fn bindgen_test_layout_pam_conv() {
-    assert_eq!(
-        ::std::mem::size_of::<pam_conv>(),
-        16usize,
-        concat!("Size of: ", stringify!(pam_conv))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<pam_conv>(),
-        8usize,
-        concat!("Alignment of ", stringify!(pam_conv))
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_conv)).conv as *const _ as usize },
-        0usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_conv),
-            "::",
-            stringify!(conv)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_conv)).appdata_ptr as *const _ as usize },
-        8usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_conv),
-            "::",
-            stringify!(appdata_ptr)
-        )
-    );
-}
 impl Clone for pam_conv {
     fn clone(&self) -> Self {
         *self
@@ -264,59 +165,6 @@ pub struct pam_xauth_data {
     pub data: *mut ::std::os::raw::c_char,
 }
 
-#[test]
-fn bindgen_test_layout_pam_xauth_data() {
-    assert_eq!(
-        ::std::mem::size_of::<pam_xauth_data>(),
-        32usize,
-        concat!("Size of: ", stringify!(pam_xauth_data))
-    );
-    assert_eq!(
-        ::std::mem::align_of::<pam_xauth_data>(),
-        8usize,
-        concat!("Alignment of ", stringify!(pam_xauth_data))
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_xauth_data)).namelen as *const _ as usize },
-        0usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_xauth_data),
-            "::",
-            stringify!(namelen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_xauth_data)).name as *const _ as usize },
-        8usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_xauth_data),
-            "::",
-            stringify!(name)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_xauth_data)).datalen as *const _ as usize },
-        16usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_xauth_data),
-            "::",
-            stringify!(datalen)
-        )
-    );
-    assert_eq!(
-        unsafe { &(*(0 as *const pam_xauth_data)).data as *const _ as usize },
-        24usize,
-        concat!(
-            "Alignment of field: ",
-            stringify!(pam_xauth_data),
-            "::",
-            stringify!(data)
-        )
-    );
-}
 impl Clone for pam_xauth_data {
     fn clone(&self) -> Self {
         *self

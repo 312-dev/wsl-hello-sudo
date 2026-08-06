@@ -2,13 +2,27 @@
 name = "wsl_hello_pam"
 version = "2.0.0"
 authors = ["Takaya Saeki <abc.tkys+pub@gmail.com>"]
+edition = "2021"
 
 [lib]
 name = "pam_wsl_hello"
-crate-type = ["dylib"]
+# cdylib, not dylib: PAM dlopen()s this and calls the entry points across the C
+# ABI. cdylib drops the Rust metadata and std dylib linkage we never needed.
+crate-type = ["cdylib"]
 
 [dependencies]
-libc = "0.2.0"
-openssl = { version = "0.10.29", features = ["vendored"] }
-toml = "0.4"
-uuid = { version = "0.5", features = ["v4"] }
+# This module runs inside sudo, in the auth path, so the dependency set is kept
+# minimal and pure-Rust. It previously vendored and statically linked the whole
+# of OpenSSL (~10MB of C) to perform exactly one RSA PKCS#1 v1.5 / SHA-256
+# signature verification, and pulled in uuid 0.5 -> rand 0.3 just for a nonce.
+libc = "0.2"
+rsa = "0.9"
+# "oid" is required: PKCS#1 v1.5 signatures embed a DigestInfo identifying the
+# hash, so the digest type must carry its OID.
+sha2 = { version = "0.10", features = ["oid"] }
+getrandom = "0.3"
+
+[dev-dependencies]
+# Test-only: needed to generate keypairs and produce genuine signatures so the
+# verifier can be proven to accept real ones and reject everything else.
+rand = "0.8"

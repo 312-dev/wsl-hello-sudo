@@ -1,5 +1,7 @@
 [workspace]
 
+resolver = "2"
+
 members = [
     "win_hello_bridge",
     "wsl_hello_pam",

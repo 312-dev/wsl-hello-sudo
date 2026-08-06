@@ -2,19 +2,14 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-extern crate libc;
-extern crate openssl;
-extern crate toml;
-extern crate uuid;
-
 pub mod auth;
 pub mod bindings;
 
-use bindings::*;
+use crate::bindings::*;
 
 #[no_mangle]
 #[allow(unused_variables)]
-pub fn pam_sm_setcred(
+pub extern "C" fn pam_sm_setcred(
     pamh: *mut pam_handle_t,
     flags: ::std::os::raw::c_int,
     argc: ::std::os::raw::c_int,
@@ -25,7 +20,7 @@ pub fn pam_sm_setcred(
 
 #[no_mangle]
 #[allow(unused_variables)]
-pub fn pam_sm_acct_mgmt(
+pub extern "C" fn pam_sm_acct_mgmt(
     pamh: *mut pam_handle_t,
     flags: ::std::os::raw::c_int,
     argc: ::std::os::raw::c_int,
@@ -36,7 +31,7 @@ pub fn pam_sm_acct_mgmt(
 
 #[no_mangle]
 #[allow(unused_variables)]
-pub fn pam_sm_open_session(
+pub extern "C" fn pam_sm_open_session(
     pamh: *mut pam_handle_t,
     flags: ::std::os::raw::c_int,
     argc: ::std::os::raw::c_int,
@@ -47,7 +42,7 @@ pub fn pam_sm_open_session(
 
 #[no_mangle]
 #[allow(unused_variables)]
-pub fn pam_sm_close_session(
+pub extern "C" fn pam_sm_close_session(
     pamh: *mut pam_handle_t,
     flags: ::std::os::raw::c_int,
     argc: ::std::os::raw::c_int,
@@ -58,7 +53,7 @@ pub fn pam_sm_close_session(
 
 #[no_mangle]
 #[allow(unused_variables)]
-pub fn pam_sm_chauthtok(
+pub extern "C" fn pam_sm_chauthtok(
     pamh: *mut pam_handle_t,
     flags: ::std::os::raw::c_int,
     argc: ::std::os::raw::c_int,
