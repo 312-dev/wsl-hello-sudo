@@ -1,0 +1,32 @@
+version: 2
+
+updates:
+  # Rust dependencies. The auth-path tree is deliberately small, so grouping
+  # everything non-major into one PR a week keeps the noise near zero.
+  - package-ecosystem: cargo
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    labels: ["dependencies", "rust"]
+    groups:
+      rust-minor-and-patch:
+        patterns: ["*"]
+        update-types: ["minor", "patch"]
+    # Major bumps arrive as individual PRs and are never auto-merged, because a
+    # major version of a crypto crate is exactly where behaviour changes hide.
+
+  # Workflow actions are pinned to commit SHAs; Dependabot reads the trailing
+  # "# vX.Y.Z" comment and keeps both the SHA and the comment current.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    labels: ["dependencies", "github-actions"]
+    groups:
+      actions:
+        patterns: ["*"]

@@ -1,0 +1,81 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: pam_wsl_hello-x86_64-linux
+            os: ubuntu-latest
+            package: wsl_hello_pam
+            artifact: target/release/libpam_wsl_hello.so
+          - name: WindowsHelloBridge-x86_64
+            os: windows-latest
+            package: win_hello_bridge
+            artifact: target/release/WindowsHelloBridge.exe
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+
+      - name: Install PAM development headers
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libpam0g-dev
+
+      - name: Build
+        run: cargo build -p ${{ matrix.package }} --release
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # create the release
+      id-token: write # sign the provenance statement
+      attestations: write # record it
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Checksums
+        run: |
+          cd dist
+          sha256sum * | tee SHA256SUMS
+
+      # Binds each artifact to the workflow, commit and runner that produced it.
+      # Verify before installing with:
+      #   gh attestation verify libpam_wsl_hello.so --repo 312-dev/wsl-hello-sudo
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: "dist/libpam_wsl_hello.so,dist/WindowsHelloBridge.exe"
+
+      - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          body: |
+            Verify a downloaded artifact before installing it into your auth path:
+
+            ```
+            gh attestation verify libpam_wsl_hello.so --repo ${{ github.repository }}
+            ```

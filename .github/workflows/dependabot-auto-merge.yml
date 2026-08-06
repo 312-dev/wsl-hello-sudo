@@ -1,0 +1,41 @@
+name: Dependabot auto-merge
+
+# This is what makes the repo genuinely hands-off. Dependabot's grouped
+# minor/patch PRs merge themselves once CI is green; major bumps never do, and
+# wait for a human. CI here is not a formality - it runs the fail-closed
+# verification tests and refuses any tree that reintroduces OpenSSL.
+on: pull_request_target
+
+permissions:
+  contents: read
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Note: this job deliberately never checks out the PR's code. It only
+      # reads metadata and asks GitHub to queue the merge, so untrusted contents
+      # are never executed with the write token this job holds.
+      - id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for non-major updates
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --squash "$PR_URL"
+
+      - name: Flag major updates for review
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr comment "$PR_URL" --body "Major version bump, so auto-merge is deliberately withheld. This module runs inside sudo; review the changelog for behavioural changes before merging."

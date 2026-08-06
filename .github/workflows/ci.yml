@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege by default; jobs opt in to more only where they need it.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  pam-module:
+    name: PAM module (Linux x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Install PAM development headers
+        run: sudo apt-get update && sudo apt-get install -y libpam0g-dev
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy -p wsl_hello_pam --all-targets -- -D warnings
+
+      # These are the tests that prove the verifier fails closed: replayed
+      # challenges, wrong-key signatures and garbage must all be rejected.
+      - name: Test
+        run: cargo test -p wsl_hello_pam --release
+
+      - name: Build
+        run: cargo build -p wsl_hello_pam --release
+
+      # PAM dlopen()s this module and looks the symbols up by name. If they stop
+      # being exported the module silently stops authenticating and every sudo
+      # quietly falls back to a password, which is easy to miss.
+      - name: Assert the C ABI entry points are exported
+        run: |
+          so=target/release/libpam_wsl_hello.so
+          for sym in pam_sm_authenticate pam_sm_setcred pam_sm_acct_mgmt; do
+            nm -D --defined-only "$so" | grep -q " T $sym" \
+              || { echo "::error::$sym is not exported from $so"; exit 1; }
+          done
+          echo "all PAM entry points exported"
+
+      # The whole point of the rewrite was getting OpenSSL out of the auth path.
+      # Fail loudly if a dependency drags it back in.
+      - name: Assert OpenSSL is absent from the auth path
+        run: |
+          if cargo tree -p wsl_hello_pam --edges normal | grep -i openssl; then
+            echo "::error::OpenSSL reappeared in the PAM module dependency tree"
+            exit 1
+          fi
+          echo "auth path is free of OpenSSL"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pam_wsl_hello-x86_64-linux
+          path: target/release/libpam_wsl_hello.so
+          if-no-files-found: error
+
+  bridge:
+    name: Windows bridge (x86_64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+
+      - name: Clippy
+        run: cargo clippy -p win_hello_bridge --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build -p win_hello_bridge --release
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: WindowsHelloBridge-x86_64
+          path: target/release/WindowsHelloBridge.exe
+          if-no-files-found: error
+
+  supply-chain:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check all

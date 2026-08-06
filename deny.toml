@@ -1,0 +1,57 @@
+# cargo-deny configuration.
+#
+# This crate is loaded into sudo and decides whether a Windows Hello gesture
+# becomes a root shell, so the dependency policy is deliberately strict.
+
+[graph]
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "x86_64-pc-windows-msvc" },
+]
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = [
+    # RUSTSEC-2023-0071 - "Marvin" timing sidechannel in the rsa crate.
+    #
+    # Applies to RSA *private key* operations (decryption / signing), where an
+    # attacker who can time many operations can recover the key. This crate only
+    # ever performs public-key signature VERIFICATION: it holds no private key,
+    # and the private key never leaves the Windows TPM. There is nothing secret
+    # in the timed path, so the attack does not apply.
+    #
+    # Revisit when rsa 0.10 ships with the constant-time backend, then drop this.
+    { id = "RUSTSEC-2023-0071", reason = "verification-only; no private key is ever held by this crate" },
+]
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Zlib",
+]
+confidence-threshold = 0.93
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# Getting OpenSSL out of the auth path was the point of the rewrite. Refuse to
+# let a transitive dependency quietly reintroduce it.
+deny = [
+    { name = "openssl" },
+    { name = "openssl-sys" },
+    { name = "openssl-src" },
+    { name = "native-tls" },
+]
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

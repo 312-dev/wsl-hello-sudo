@@ -1,0 +1,57 @@
+name: Advisory scan
+
+# Dependabot tells you when a newer version exists. This tells you when the
+# version you are already running turns out to be vulnerable, which is the
+# case that actually matters for code sitting in the sudo auth path.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  advisories:
+    name: RustSec advisories
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - id: deny
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        continue-on-error: true
+        with:
+          command: check advisories
+
+      - name: Raise an issue when an advisory lands
+        if: steps.deny.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          # Only one open advisory issue at a time, otherwise the daily schedule
+          # would file a duplicate every morning until someone acts on it.
+          existing=$(gh issue list --state open --label security --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Still failing as of $(date -u +%F). Run: $RUN_URL"
+            exit 0
+          fi
+          gh issue create \
+            --title "Security advisory affects a dependency" \
+            --label security \
+            --body "The scheduled \`cargo-deny check advisories\` run failed, meaning a RustSec advisory now matches something in the dependency tree of the PAM module.
+
+This crate runs inside sudo, so treat it accordingly.
+
+Run: $RUN_URL
+
+If the advisory does not apply to how this crate uses the dependency, document the reasoning in \`deny.toml\` under \`[advisories].ignore\` rather than silencing it."
+
+      - name: Fail the run so the badge reflects reality
+        if: steps.deny.outcome == 'failure'
+        run: exit 1
