@@ -1,5 +1,49 @@
 # WSL Hello sudo
 
+> ### About this fork
+>
+> A maintained fork of [nullpo-head/WSL-Hello-sudo](https://github.com/nullpo-head/WSL-Hello-sudo)
+> (MIT, (c) 2017 Takaya Saeki). Upstream's last commit was December 2021 and it no
+> longer builds a working install on current Windows. This fork exists because the
+> original stopped working on Windows 11 24H2/25H2, and because a module that sits
+> in the `sudo` auth path deserves tests, a small dependency tree, and a supply
+> chain you can verify.
+>
+> **Fixed here**
+>
+> - **Windows 11 25H2 broke key creation.** `KeyCredentialManager::RequestCreateAsync`
+>   with `KeyCredentialCreationOption::FailIfExists` now throws a raw NCrypt error
+>   `0x80098044` instead of returning the documented `CredentialAlreadyExists`
+>   status, and it does so even for a key name that has never existed. Because the
+>   error propagates before the status is inspected, upstream's fallback branch is
+>   unreachable and installation fails with an empty `Error:` message. This fork
+>   probes with `OpenAsync` and only creates when the credential is truly absent.
+> - **RFC 7468 compliance.** The bridge emitted the public key as a single
+>   unwrapped base64 line. OpenSSL tolerated it; strict parsers do not. The bridge
+>   now wraps at 64 columns and the PAM module normalises existing keys, so no
+>   re-enrolment is needed.
+>
+> **Hardened here**
+>
+> - **OpenSSL removed from the auth path.** It was vendored and statically linked
+>   (~10MB of C) to perform exactly one RSA PKCS#1 v1.5 / SHA-256 signature
+>   verification. Replaced with RustCrypto (`rsa`, `sha2`). The module went from
+>   9.98MB to ~600KB with no C in the build.
+> - **Nonce from the OS CSPRNG.** `uuid 0.5` -> `rand 0.3` (both long unmaintained)
+>   replaced with `getrandom` and a 256-bit nonce. This nonce is the only thing
+>   preventing replay of an observed signature.
+> - **Tests, where there were none.** Upstream could not have any: vendored bindgen
+>   output contained `&(*(0 as *const T))` layout assertions that modern rustc
+>   rejects as UB, so `cargo test` failed to compile. Those generated blocks are
+>   gone and the verifier now has tests proving it rejects replayed challenges,
+>   wrong-key signatures and malformed input.
+> - **Correct linkage.** `cdylib` with `extern "C"` entry points, rather than a
+>   Rust-ABI `dylib` that happened to work.
+> - **Supply chain.** All GitHub Actions pinned to commit SHAs, `cargo-deny` gating
+>   licences/advisories/sources, a daily advisory scan, and release artifacts
+>   published with build provenance you can check with `gh attestation verify`.
+>   `deny.toml` explicitly bans OpenSSL from ever returning to the tree.
+
 "WSL Hello sudo" is a Linux PAM module and companion Windows CLI apps that realize `sudo` by
 biometric login of [Windows Hello](https://www.microsoft.com/en-us/windows/windows-hello) on Windows Subsystem for Linux (WSL).  
 This PAM module allows you to authenticate `sudo` via face recognition, fingerprint authentication, and of couse machine-local PIN.
