@@ -3,8 +3,9 @@ name = "win_hello_bridge"
 version = "2.0.0"
 authors = ["Takaya Saeki <abc.tkys+pub@gmail.com>"]
 edition = "2018"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+description = "Windows CLI that signs a challenge after a Windows Hello gesture"
+repository = "https://github.com/312-dev/wsl-hello-sudo"
 
 [[bin]]
 name = "WindowsHelloBridge"

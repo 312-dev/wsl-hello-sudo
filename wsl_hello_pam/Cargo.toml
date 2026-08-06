@@ -3,6 +3,9 @@ name = "wsl_hello_pam"
 version = "2.0.0"
 authors = ["Takaya Saeki <abc.tkys+pub@gmail.com>"]
 edition = "2021"
+license = "MIT"
+description = "PAM module that authenticates via Windows Hello on WSL"
+repository = "https://github.com/312-dev/wsl-hello-sudo"
 
 [lib]
 name = "pam_wsl_hello"
