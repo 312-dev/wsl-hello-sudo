@@ -19,7 +19,7 @@ libc = "0.2"
 rsa = "0.9"
 # "oid" is required: PKCS#1 v1.5 signatures embed a DigestInfo identifying the
 # hash, so the digest type must carry its OID.
-sha2 = { version = "0.10", features = ["oid"] }
+sha2 = { version = "0.11", features = ["oid"] }
 getrandom = "0.3"
 
 [dev-dependencies]
