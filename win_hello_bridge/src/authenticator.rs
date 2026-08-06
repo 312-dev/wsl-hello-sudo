@@ -2,7 +2,6 @@ use crate::FailureReason;
 use std::sync::mpsc;
 use std::time::Duration;
 use windows::{
-    core::Handle,
     Security::{Credentials::KeyCredentialManager, Cryptography::CryptographicBuffer},
     Win32::{
         Foundation::PWSTR,
@@ -51,7 +50,9 @@ fn focus_hello_window() -> mpsc::SyncSender<()> {
             let hwnd =
                 unsafe { FindWindowW("Credential Dialog Xaml Host", PWSTR(core::ptr::null_mut())) };
 
-            if let Ok(hwnd) = hwnd.ok() {
+            // windows 0.32 dropped the core::Handle trait that provided .ok();
+            // FindWindowW returns a null HWND when no such window exists.
+            if hwnd.0 != 0 {
                 break hwnd;
             }
 
