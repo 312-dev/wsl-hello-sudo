@@ -23,6 +23,20 @@
 >   now wraps at 64 columns and the PAM module normalises existing keys, so no
 >   re-enrolment is needed.
 >
+> **Smart App Control**
+>
+> On Windows 11 with Smart App Control enforced, `WindowsHelloBridge.exe` will not
+> run at all: SAC blocks unsigned locally-built executables as a class, reporting
+> "An Application Control policy has blocked this file" (CodeIntegrity events 3077
+> and 3033). Turning SAC off is irreversible without reinstalling Windows, so this
+> fork ships `powershell_bridge/WindowsHelloBridge.ps1` instead, executed by the
+> Microsoft-signed `powershell.exe`. Point the config at it with the new
+> `authenticator_script` key; the executable path still works where SAC is off.
+>
+> This costs nothing in security. The trust anchor was always the root-owned
+> public key, never the bridge binary's integrity, so a tampered script can no
+> more forge a TPM signature than a tampered `.exe` could.
+>
 > **Hardened here**
 >
 > - **OpenSSL removed from the auth path.** It was vendored and statically linked

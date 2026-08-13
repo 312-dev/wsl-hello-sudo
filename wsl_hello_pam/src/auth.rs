@@ -128,6 +128,17 @@ fn get_win_mnt() -> Result<String, ConfigError> {
     get_config_value("win_mnt")
 }
 
+/// Optional path to a PowerShell authenticator script.
+///
+/// Windows Smart App Control blocks unsigned locally-built executables outright,
+/// which takes WindowsHelloBridge.exe with it. Pointing `authenticator_path` at
+/// the Microsoft-signed powershell.exe and naming a script here runs the same
+/// logic through a binary SAC already trusts. Absent, the executable is invoked
+/// directly as before.
+fn get_authenticator_script() -> Option<String> {
+    get_config_value("authenticator_script").ok()
+}
+
 #[derive(Debug)]
 enum HelloAuthenticationError {
     GetUserError(i32),
@@ -241,7 +252,18 @@ fn authenticate_via_hello(pamh: *mut pam_handle_t) -> Result<i32, HelloAuthentic
         let challenge_tmpfile_in = Stdio::from(challenge_tmpfile);
 
         let authenticator_path = get_authenticator_path()?;
-        let authenticator = Command::new(&authenticator_path)
+        let mut command = Command::new(&authenticator_path);
+        if let Some(script) = get_authenticator_script() {
+            command.args([
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                &script,
+            ]);
+        }
+        let authenticator = command
             .arg("authenticator")
             .arg(credential_key_name)
             .current_dir(Path::new(&get_win_mnt()?))
